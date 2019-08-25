@@ -1,3 +1,51 @@
+let songStuff = [
+  {
+  "song": "Track 1",
+  "artist": "Artist 1",
+  "album": "Album 1",
+  "length": "4:26",
+  "url": ""
+  },
+  {
+  "song": "Track 2",
+  "artist": "Artist 2",
+  "album": "Album 2",
+  "length": "3:48",
+  "url": ""
+  },
+  {
+  "song": "Track 3",
+  "artist": "Artist 3",
+  "album": "Album 3",
+  "length": "2:50",
+  "url": ""
+  },
+  {
+  "song": "Track 4",
+  "artist": "Artist 4",
+  "album": "Album 4",
+  "length": "5:10",
+  "url": ""
+  },
+  {
+  "song": "Track 5",
+  "artist": "Artist 5",
+  "album": "Album 5",
+  "length": "2:41",
+  "url": ""
+  },
+  {
+  "song": "Track 6",
+  "artist": "Artist 6",
+  "album": "Album 6",
+  "length": "5:25",
+  "url": ""
+  }
+]
+
+let shuffleVal = 0
+
+// Used to set audio source position to user's position
 export class AudioFollow {
   update() {
     let camPos = Camera.instance.position
@@ -6,70 +54,155 @@ export class AudioFollow {
 }
 engine.addSystem(new AudioFollow)
 
+// Used to track how long a song has been playing
+let songLen = 10
+export class AudioTimer {
+  update(dt: number){
+    if (music.getComponent(AudioSource).playing){
+      if (songLen > 0){
+        songLen -= dt
+      } else {
+        stopButton.visible = true
+        stopButton.isPointerBlocker = true
+        playButton.visible = false
+        playButton.isPointerBlocker = false
+        if (shuffle){
+          switchSong(shuffleArray[shuffleVal], "absolute")
+          if (shuffleVal < songStuff.length-1){
+            shuffleVal++
+          } else {
+            shuffler(shuffleArray)
+            shuffleVal = 0
+          }
+        } else {
+          switchSong(1, "relative")
+        }
+        updateTitle()
+        triggerHighlight()
+      }
+    }
+  }
+}
+engine.addSystem(new AudioTimer)
+
+let shuffleArray = []
+for (let i = 0; i < songStuff.length; i++){
+  shuffleArray[i] = i
+}
+
+function shuffler(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex
+  while (0 !== currentIndex) {
+    randomIndex = Math.floor(Math.random() * currentIndex)
+    currentIndex -= 1
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+  log(array)
+  return array;
+}
+
+shuffler(shuffleArray)
+
 // Create screenspace component
 const canvas = new UICanvas()
-
-// const scrollableContainer = new UIScrollRect(canvas)
-// scrollableContainer.width = '10%'
-// scrollableContainer.height = '40%'
-// scrollableContainer.valueX = 1
-// scrollableContainer.backgroundColor = Color4.Gray()
-// scrollableContainer.isVertical = true
-// scrollableContainer.positionX = -400
-// scrollableContainer.hAlign = "right"
-// scrollableContainer.vAlign = "bottom"
 
 let imageTexture = new Texture("images/buttons.png")
 imageTexture.samplingMode = 1
 
 const background = new UIImage(canvas, imageTexture)
-background.width = 247
+background.width = 338
 background.height = 264
 background.positionX = -17
 background.positionY = 17
 background.sourceLeft = 0
 background.sourceTop = 0
-background.sourceWidth = 247
+background.sourceWidth = 338
 background.sourceHeight = 264
 background.hAlign = "right"
 background.vAlign = "bottom"
 
+const scrollableContainer = new UIScrollRect(canvas)
+scrollableContainer.height = '22%'
+scrollableContainer.width = 338
+scrollableContainer.valueX = 1
+// scrollableContainer.backgroundColor = new Color4(1, 0, 0, .25)
+scrollableContainer.isVertical = true
+scrollableContainer.positionX = -10
+scrollableContainer.positionY = 25
+scrollableContainer.hAlign = "right"
+scrollableContainer.vAlign = "bottom"
+
+const invisibleWidth = new UIText(scrollableContainer)
+invisibleWidth.width = 338
+
+const shuffleButton = new UIImage(background, imageTexture)
+shuffleButton.width = 21
+shuffleButton.height = 15
+shuffleButton.positionX = -115
+shuffleButton.positionY = 110
+shuffleButton.sourceLeft = 341
+shuffleButton.sourceTop = 195
+shuffleButton.sourceWidth = 21
+shuffleButton.sourceHeight = 15
+shuffleButton.isPointerBlocker = true
+let shuffle = 0
+shuffleButton.onClick = new OnClick(() => {
+  shuffler(shuffleArray)
+  shuffleVal = 0
+  shuffleButton.sourceTop = shuffleButton.sourceTop == 195 ? 215 : 195
+  shuffle = shuffle ? 0: 1
+})
+
 const rewindButton = new UIImage(background, imageTexture)
-rewindButton.width = 37
-rewindButton.height = 20
+rewindButton.width = 24
+rewindButton.height = 21
 rewindButton.positionX = -50
 rewindButton.positionY = 110
-rewindButton.sourceLeft = 272
-rewindButton.sourceTop = 53
-rewindButton.sourceWidth = 37
-rewindButton.sourceHeight = 20
+rewindButton.sourceLeft = 341
+rewindButton.sourceTop = 164
+rewindButton.sourceWidth = 24
+rewindButton.sourceHeight = 21
 rewindButton.isPointerBlocker = true
 rewindButton.onClick = new OnClick(() => {
   stopButton.visible = true
   stopButton.isPointerBlocker = true
   playButton.visible = false
   playButton.isPointerBlocker = false
-  switchSong(-1)
-  updateSongList()
+  switchSong(-1, "relative")
+  updateTitle()
+  triggerHighlight()
 })
 
 const forwardButton = new UIImage(background, imageTexture)
-forwardButton.width = 37
-forwardButton.height = 20
+forwardButton.width = 24
+forwardButton.height = 21
 forwardButton.positionX = 50
 forwardButton.positionY = 110
-forwardButton.sourceLeft = 333
-forwardButton.sourceTop = 53
-forwardButton.sourceWidth = 37
-forwardButton.sourceHeight = 20
+forwardButton.sourceLeft = 415
+forwardButton.sourceTop = 164
+forwardButton.sourceWidth = 24
+forwardButton.sourceHeight = 21
 forwardButton.isPointerBlocker = true
 forwardButton.onClick = new OnClick(() => {
   stopButton.visible = true
   stopButton.isPointerBlocker = true
   playButton.visible = false
   playButton.isPointerBlocker = false
-  switchSong(1)
-  updateSongList()
+  if (shuffle){
+    switchSong(shuffleArray[shuffleVal], "absolute")
+    if (shuffleVal < songStuff.length-1){
+      shuffleVal++
+    } else {
+      shuffler(shuffleArray)
+      shuffleVal = 0
+    }
+  } else {
+    switchSong(1, "relative")
+  }
+  updateTitle()
+  triggerHighlight()
 })
 
 const playButton = new UIImage(background, imageTexture)
@@ -77,8 +210,8 @@ playButton.width = 21
 playButton.height = 21
 playButton.positionX = 0
 playButton.positionY = 110
-playButton.sourceLeft = 352
-playButton.sourceTop = 13
+playButton.sourceLeft = 421
+playButton.sourceTop = 85
 playButton.sourceWidth = 21
 playButton.sourceHeight = 21
 playButton.isPointerBlocker = true
@@ -87,6 +220,8 @@ playButton.onClick = new OnClick(() => {
   stopButton.isPointerBlocker = true
   playButton.visible = false
   playButton.isPointerBlocker = false
+  triggerHighlight()
+  songLen = parseInt(songStuff[currSong].length.split(":", 2)[0])*60 + parseInt(songStuff[currSong].length.split(":", 2)[1])
   music.getComponent(AudioSource).playing = true
 })
 
@@ -95,8 +230,8 @@ stopButton.width = 21
 stopButton.height = 21
 stopButton.positionX = 0
 stopButton.positionY = 110
-stopButton.sourceLeft = 272
-stopButton.sourceTop = 13
+stopButton.sourceLeft = 341
+stopButton.sourceTop = 85
 stopButton.sourceWidth = 21
 stopButton.sourceHeight = 21
 stopButton.visible = false
@@ -106,56 +241,100 @@ stopButton.onClick = new OnClick(() => {
   playButton.isPointerBlocker = true
   stopButton.visible = false
   stopButton.isPointerBlocker = false
+  for (let j = 0; j < songStuff.length; j++){
+    if (queuePlayButtonArray[j].sourceTop == 13){
+      queuePlayButtonArray[j].sourceTop = 52
+    }
+  }
   music.getComponent(AudioSource).playing = false
 })
 
+// Used to track current song
 let currSong = 0
 
+// Initializes text containers and queue play buttons
 const currSongTitle = new UIText(background)
 const currSongDesc = new UIText(background)
 
 const queueTitleArray = []
 const queueDescArray = []
-for (let i = 0; i < 4; i++){
-  queueTitleArray[i] = new UIText(background)
-  queueDescArray[i] = new UIText(background)
+const queuePlayButtonArray = []
+for (let i = 0; i < songStuff.length; i++){
+  queueTitleArray[i] = new UIText(scrollableContainer)
+  queueDescArray[i] = new UIText(scrollableContainer)
+  queuePlayButtonArray[i] = new UIImage(scrollableContainer, imageTexture)
 }
 
-function updateSongList(){
+// Refreshes title
+function updateTitle(){
   executeTask(async () => {
     try {
-      let response = await fetch("https://res.cloudinary.com/decentralgamesmusicapi/raw/upload/v1566180522/songs_ywigyx.json")
-      let json = await response.json()
-      log(json)
+      // let response = await fetch("https://res.cloudinary.com/decentralgamesmusicapi/raw/upload/v1566180522/songs_ywigyx.json")
+      // let json = await response.json()
+      // log(json)
       
-      currSongTitle.value = json[currSong].song
+      currSongTitle.value = songStuff[currSong].song.length <= 35 ? songStuff[currSong].song : songStuff[currSong].song.substr(0, 35) + "..."
       currSongTitle.hTextAlign = "center"
       currSongTitle.positionX = 0
       currSongTitle.positionY = 90
-      currSongTitle.fontSize = 16
+      currSongTitle.fontSize = 18
       currSongTitle.isPointerBlocker = false
 
-      currSongDesc.value = json[currSong].artist + " • " + json[currSong].album
+      currSongDesc.value = (songStuff[currSong].artist + " • " + songStuff[currSong].album).length <= 35 ? (songStuff[currSong].artist + " • " + songStuff[currSong].album): (songStuff[currSong].artist + " • " + json[currSong].album).substr(0, 35) + "..."
       currSongDesc.hTextAlign = "center"
       currSongDesc.positionX = 0
       currSongDesc.positionY = 75
-      currSongDesc.fontSize = 13
+      currSongDesc.fontSize = 15
       currSongDesc.color = Color4.Gray()
       currSongDesc.isPointerBlocker = false
+    } catch {
+      log("failed to reach URL")
+    }
+  })
+}
 
-      for (let i = 0; i < json.length-1; i++){
-        queueTitleArray[i].value = json[getSongPos(i+1)].song
-        queueTitleArray[i].positionX = -50
-        queueTitleArray[i].positionY = 40-40*i
-        queueTitleArray[i].fontSize = 12
+// Refreshes queue
+function updateSongList(){
+  executeTask(async () => {
+    try {
+      // let response = await fetch("https://res.cloudinary.com/decentralgamesmusicapi/raw/upload/v1566180522/songs_ywigyx.json")
+      // let json = await response.json()
+      // log(json)
+
+      for (let i = 0; i < songStuff.length; i++){
+        queueTitleArray[i].value = songStuff[i].song.length <= 35 ? songStuff[i].song : songStuff[i].song.substr(0, 35) + "..."
+        queueTitleArray[i].positionX = -85
+        queueTitleArray[i].positionY = 25-40*i
+        queueTitleArray[i].fontSize = 14
         queueTitleArray[i].isPointerBlocker = false
+        queueTitleArray[i].vTextAlign = "top"
   
-        queueDescArray[i].value = json[getSongPos(i+1)].artist + " • " + json[getSongPos(i+1)].album
-        queueDescArray[i].positionX = -50
-        queueDescArray[i].positionY = 40-40*i-15
-        queueDescArray[i].fontSize = 11
+        queueDescArray[i].value = (songStuff[i].artist + " • " + songStuff[i].album).length <= 35 ? (songStuff[i].artist + " • " + songStuff[i].album) : (songStuff[i].artist + " • " + songStuff[i].album).substr(0, 35) + "..."
+        queueDescArray[i].positionX = -85
+        queueDescArray[i].positionY = 10-40*i
+        queueDescArray[i].fontSize = 13
         queueDescArray[i].color = Color4.Gray()
         queueDescArray[i].isPointerBlocker = false
+        queueDescArray[i].vTextAlign = "top"
+
+        queuePlayButtonArray[i].width = 21
+        queuePlayButtonArray[i].height = 21
+        queuePlayButtonArray[i].positionX = -155
+        queuePlayButtonArray[i].positionY = 36-40*i
+        queuePlayButtonArray[i].sourceLeft = 400
+        queuePlayButtonArray[i].sourceTop = 52
+        queuePlayButtonArray[i].sourceWidth = 21
+        queuePlayButtonArray[i].sourceHeight = 21
+        queuePlayButtonArray[i].isPointerBlocker = true
+        queuePlayButtonArray[i].onClick = new OnClick(() => {
+          stopButton.visible = true
+          stopButton.isPointerBlocker = true
+          playButton.visible = false
+          playButton.isPointerBlocker = false
+          switchSong(i, "absolute")
+          updateTitle()
+          triggerHighlight()
+})
       }
     } catch {
       log("failed to reach URL")
@@ -163,21 +342,39 @@ function updateSongList(){
   })
 }
 
+// Used to toggle queue play button color
+function triggerHighlight(){
+  for (let j = 0; j < songStuff.length; j++){
+    if (queuePlayButtonArray[j].sourceTop == 13){
+      queuePlayButtonArray[j].sourceTop = 52
+    }
+  }
+  queuePlayButtonArray[currSong].sourceLeft = 400
+  queuePlayButtonArray[currSong].sourceTop = 13
+}
+
+updateTitle()
 updateSongList()
 
+// Generates an audio source for each song
 const music = new Entity()
 music.addComponent(new Transform())
 let sourceList = []
-for (let i = 0; i < 5; i++){
+for (let i = 0; i < songStuff.length; i++){
   sourceList[i] = new AudioSource(new AudioClip("sounds/song" + i + ".mp3"))
 }
 music.addComponent(sourceList[currSong])
 engine.addEntity(music)
 
-function switchSong(pos: number){
-  // let songURL = "https://res.cloudinary.com/decentralgamesmusicapi/video/upload/v1566088607/Music/Virtual_Self_-_Ghost_Voices_zomfsr.mp3"
+// Switches audio source based on absolute position in song list or relative to current song
+function switchSong(pos: number, type: string){
   music.removeComponent(AudioSource)
-  currSong = getSongPos(pos)
+  if (type == "relative"){
+    currSong = getSongPos(pos)
+  } else if (type == "absolute"){
+    currSong = pos
+  }
+  songLen = parseInt(songStuff[currSong].length.split(":", 2)[0])*60 + parseInt(songStuff[currSong].length.split(":", 2)[1])
   music.addComponent(sourceList[currSong])
   music.getComponent(AudioSource).playing = true
 }
